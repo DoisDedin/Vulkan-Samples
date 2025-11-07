@@ -1,0 +1,87 @@
+////
+- Copyright (c) 2019-2023, The Khronos Group
+-
+- SPDX-License-Identifier: Apache-2.0
+-
+- Licensed under the Apache License, Version 2.0 the "License";
+- you may not use this file except in compliance with the License.
+- You may obtain a copy of the License at
+-
+-     http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-
+////
+
+= Triangle Play
+
+////
+The following block adds linkage to this repo in the Vulkan docs site project. It's only visible if the file is viewed via the Antora framework.
+////
+
+ifdef::site-gen-antora[]
+TIP: The source for this sample can be found in the https://github.com/KhronosGroup/Vulkan-Samples/tree/main/samples/api/triangle_play[Khronos Vulkan Samples GitHub repository].
+endif::[]
+
+
+== Overview
+
+Triangle Play demonstrates how to build a very small Vulkan application on top of the `ApiVulkanSample` helper that animates multiple copies of a triangle.
+Instead of loading a glTF scene, the geometry is assembled manually and animated entirely through a single uniform buffer.
+
+Key ideas shown in this sample:
+
+* Creating a host-visible vertex buffer that stores custom vertex attributes (position, triangle id and color).
+* Updating a per-frame uniform buffer with model-view-projection data as well as per-triangle offsets.
+* Using a tiny GUI overlay to control animation speed, scale and orbit radius at runtime.
+
+The result is three coloured triangles that spin in place while orbiting around the origin. When animation is disabled, the triangles hold their last pose so you can examine the transforms without jitter.
+
+== Uniform data
+
+The main uniform buffer packs everything the shaders need:
+
+[,cpp]
+----
+struct UniformBufferObject {
+    glm::mat4 mvp;
+    glm::vec4 offsets[3];
+    glm::vec4 params; // x: local rotation, y: scale, z: orbit radius, w: animate flag
+};
+----
+
+`offsets` is updated every frame to place each triangle on a circular orbit, and `params` forwards the rotation phase and scaling factor used inside the vertex shader. The buffer lives in CPU-visible memory, so updating it in `render(float delta_time)` is just a call to `BufferC::update`.
+
+== Shader highlights
+
+The vertex shader reads the triangle id from the vertex data, rotates the local triangle shape, and applies the orbit offset from the uniform buffer:
+
+[,glsl]
+----
+int triIndex = clamp(int(inTriangle + 0.5), 0, 2);
+float angle = ubo.params.x + float(triIndex) * kStep;
+vec2 local = rotate(inPos * ubo.params.y, angle);
+vec2 finalPos = local + ubo.offsets[triIndex].xy;
+gl_Position = ubo.mvp * vec4(finalPos, 0.0, 1.0);
+----
+
+The fragment shader simply modulates each triangle's base colour with a brightness term derived from the rotation angle to add a subtle shimmering effect.
+
+== Controls
+
+Open the *Triangle controls* panel in the HUD to:
+
+* Toggle the animation on or off.
+* Change the triangle scale.
+* Adjust the orbit radius.
+* Tweak the local spin speed and orbit speed (degrees per second).
+
+All controls take immediate effect because they trigger a uniform buffer update on change.
+
+== Conclusion
+
+Triangle Play is meant to be a lightweight jumping-off point for experimenting with custom geometry in the Vulkan Samples framework. It shows how to add bespoke vertex data, wire it into a graphics pipeline, and expose runtime controls without relying on external assets. From here you can extend the idea by adding more triangles, per-triangle buffers, or porting the animation to compute shaders for more complex behaviours.
