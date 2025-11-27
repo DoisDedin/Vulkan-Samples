@@ -46,6 +46,30 @@ A self-contained (minimal use of framework) sample that illustrates the renderin
 
 A lightweight playground that drives three animated triangles via a single uniform buffer and exposes live controls through the UI overlay.
 
+=== xref:./{api_samplespath}interactive_square_01/README.adoc[Interactive Square 01]
+
+Implements Exercise 01 from the class: a rotated green square that responds to keyboard input by changing the clear colour.
+
+=== xref:./{api_samplespath}hsv_triangle_02/README.adoc[HSV Triangle 02]
+
+Demonstrates the HSV→RGB conversion (H=180°, S=0.5, V=0.8) and applies the resulting RGB value to a Vulkan-drawn triangle.
+
+=== xref:./{api_samplespath}triangle_strip_03/README.adoc[Triangle Strip 03]
+
+Shows how a square can be built efficiently with a single triangle strip and four coloured vertices, producing a smooth gradient.
+
+=== xref:./{api_samplespath}colored_cube_04/README.adoc[Colored Cube 04]
+
+A per-face coloured cube rendered with 12 triangles, a simple Lambert light and a continuous rotation.
+
+=== xref:./{api_samplespath}transform_sequence_05/README.adoc[Transform Sequence 05]
+
+Visualises the algebra/ordering exercises by drawing the original triangle, the X-rotation result and the rotate→translate→scale composition with push constants.
+
+=== xref:./{api_samplespath}robotic_arm_06/README.adoc[Robotic Arm 06]
+
+Combines hierarchical transforms and a moving camera to emulate the robotic arm scenario discussed in class.
+
 === xref:./{api_samplespath}hpp_compute_nbody/README.adoc[HPP Compute shader N-Body simulation]
 
 A transcoded version of the API sample xref:./{api_samplespath}compute_nbody/README.adoc[Compute N-Body] that illustrates the usage of the C{pp} bindings of Vulkan provided by Vulkan-Hpp.

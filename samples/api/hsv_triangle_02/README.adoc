@@ -1,0 +1,10 @@
+////
+- Copyright (c) 2025
+-
+- SPDX-License-Identifier: Apache-2.0
+////
+
+= HSV Triangle 02
+
+This sample converts the HSV value (H=180°, S=0.5, V=0.8) to RGB on the CPU and feeds the resulting colour into a Vulkan pipeline.  
+A simple triangle is rendered with that colour, demonstrating how colour-space reasoning from the course can be applied in a Vulkan shader workflow.

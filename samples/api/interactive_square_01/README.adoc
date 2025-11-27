@@ -1,0 +1,10 @@
+////
+- Copyright (c) 2025
+-
+- SPDX-License-Identifier: Apache-2.0
+////
+
+= Interactive Square 01
+
+This exercise recreates the classic “rotate a green square and change the background colour with the keyboard” assignment using Vulkan.  
+Press `R` to paint the clear colour red or `B` to restore the default dark tone. The square is drawn via a single triangle strip and a uniform buffer encodes the orthographic transform and the initial 30° Z rotation.

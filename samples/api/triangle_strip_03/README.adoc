@@ -1,0 +1,10 @@
+////
+- Copyright (c) 2025
+-
+- SPDX-License-Identifier: Apache-2.0
+////
+
+= Triangle Strip 03
+
+Implements the “efficient square using GL_TRIANGLE_STRIP” requirement with Vulkan.  
+Four vertices, each with a unique colour attribute, are fed into a triangle-strip pipeline producing two triangles and a smooth colour gradient thanks to vertex-colour interpolation (the Vulkan equivalent of the fixed-function Gouraud shading mentioned in class).

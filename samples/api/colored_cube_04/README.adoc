@@ -1,0 +1,10 @@
+////
+- Copyright (c) 2025
+-
+- SPDX-License-Identifier: Apache-2.0
+////
+
+= Colored Cube 04
+
+A 12-triangle cube rendered with per-face colours, rotating over time and shaded with a basic Lambert lighting model.  
+The sample mirrors the fixed-function assignment: vertex normals are supplied, `glRotatef` is replaced by a time-based model matrix, and a perspective projection replicates `gluPerspective`.

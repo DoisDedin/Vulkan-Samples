@@ -1,0 +1,10 @@
+////
+- Copyright (c) 2025
+-
+- SPDX-License-Identifier: Apache-2.0
+////
+
+= Robotic Arm 06
+
+Combines hierarchical modelling with a moving observer: a simple base, arm, and forearm are drawn from the same box mesh but with different transforms pushed between draws.  
+The camera orbits the scene to emulate a `gluLookAt` positioned above the robot. This mirrors the conceptual exercise about choosing Eye/Center/Up and structuring `glPushMatrix`/`glPopMatrix` blocks for parent/child parts.
