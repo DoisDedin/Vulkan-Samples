@@ -51,6 +51,7 @@ set(ORDER_LIST
     #API Samples
     "hello_triangle"
     "hello_triangle_1_3"
+    "tree_tp1"
     "dynamic_uniform_buffers"
     "texture_loading"
     "hdr"
