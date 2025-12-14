@@ -1,11 +1,14 @@
 #version 450
 
-layout(location = 0) in float vRadius;
+// Fragment shader: calcula a distância do fragmento ao eixo do segmento (capsule SDF),
+// aplica um gradiente de cor com base no raio original e produz um acabamento suave.
+
+layout(location = 0) in float vDatasetRadius;
 layout(location = 1) in vec3 vLocalPos;
-layout(location = 2) flat in vec3 vSegmentA;
-layout(location = 3) flat in vec3 vSegmentB;
+layout(location = 2) flat in vec3 vCapsuleStart;
+layout(location = 3) flat in vec3 vCapsuleEnd;
 layout(location = 4) flat in float vCapsuleRadius;
-layout(location = 5) flat in float vTipFactor;
+layout(location = 5) flat in float vDepthFactor;
 
 layout(location = 0) out vec4 outColor;
 
@@ -53,7 +56,7 @@ float capsule_alpha(float distance, float radius, float solidity)
 void main()
 {
     float capsule_radius = max(vCapsuleRadius, 1e-4);
-    vec3  closest        = closest_point_on_segment(vLocalPos, vSegmentA, vSegmentB);
+    vec3  closest        = closest_point_on_segment(vLocalPos, vCapsuleStart, vCapsuleEnd);
     vec3  radial_vec     = vLocalPos - closest;
     float radial_len     = length(radial_vec);
 
@@ -65,7 +68,7 @@ void main()
     }
 
     float range      = max(ubo.radiusRange.z, 1e-6);
-    float normalized = clamp((vRadius - ubo.radiusRange.x) / range, 0.0, 1.0);
+    float normalized = clamp((vDatasetRadius - ubo.radiusRange.x) / range, 0.0, 1.0);
     vec3  base_color = palette(normalized);
 
     float radial_ratio = clamp(radial_len / capsule_radius, 0.0, 1.0);
@@ -83,7 +86,7 @@ void main()
     float center_emphasis = pow(1.0 - radial_ratio, 0.6);
 
     vec3 color = base_color * lambert;
-    float tip_enhance = mix(1.0, 0.75, vTipFactor);
+    float tip_enhance = mix(1.0, 0.75, vDepthFactor);
     color = mix(color * 0.5, color * 1.3, center_emphasis * tip_enhance);
     color += vec3(1.0) * highlight * 0.32;
 

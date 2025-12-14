@@ -42,18 +42,18 @@ class TreeTp1 : public ApiVulkanSample
 	struct SegmentVertex
 	{
 		glm::vec3 position{0.0f};
-		glm::vec3 segment_a{0.0f};
-		glm::vec3 segment_b{0.0f};
+		glm::vec3 capsule_start{0.0f};
+		glm::vec3 capsule_end{0.0f};
 		float     capsule_radius{0.0f};
-		float     radius_value{0.0f};
-		float     tip_factor{0.0f};
+		float     dataset_radius{0.0f};
+		float     branch_depth_factor{0.0f};
 	};
 
 	struct SegmentData
 	{
-		glm::vec2 a{0.0f};
-		glm::vec2 b{0.0f};
-		float     radius{0.0f};
+		glm::vec2 start_point{0.0f};
+		glm::vec2 end_point{0.0f};
+		float     dataset_radius{0.0f};
 		float     depth_factor{1.0f};
 	};
 
@@ -111,13 +111,13 @@ class TreeTp1 : public ApiVulkanSample
 	std::unique_ptr<vkb::core::BufferC> vertex_buffer;
 	uint32_t                             vertex_count = 0;
 
-		FrameGeometry                                      current_geometry;
-		std::vector<std::string>                          current_frames;
-		std::unordered_map<std::string, FrameGeometry>    frame_cache;
-		float                                             last_growth_used = 1.0f;
+	FrameGeometry                                   current_geometry;
+	std::vector<std::string>                       current_frames;
+	std::unordered_map<std::string, FrameGeometry> frame_cache;
+	float                                           last_growth_used = 1.0f;
 
-		VkPipelineLayout      pipeline_layout      = VK_NULL_HANDLE;
-		VkPipeline            pipeline             = VK_NULL_HANDLE;
+	VkPipelineLayout      pipeline_layout      = VK_NULL_HANDLE;
+	VkPipeline            pipeline             = VK_NULL_HANDLE;
 	VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
 	VkDescriptorSet       descriptor_set       = VK_NULL_HANDLE;
 
@@ -127,7 +127,7 @@ class TreeTp1 : public ApiVulkanSample
 	void setup_descriptor_set();
 	void prepare_pipeline();
 
-	void update_uniform_buffer();
+		void update_uniform_buffer();
 		void draw();
 		void handle_animation(float delta_time);
 		void update_growth(float delta_time);
@@ -139,8 +139,8 @@ class TreeTp1 : public ApiVulkanSample
 		bool load_frame(uint32_t frame_index);
 		bool upload_geometry(const std::vector<SegmentVertex> &vertices);
 		FrameGeometry parse_vtk_file(const std::string &relative_path) const;
-	glm::mat4 build_model_matrix() const;
-	float    compute_auto_scale() const;
-};
+		glm::mat4 build_model_matrix() const;
+		float    compute_auto_scale() const;
+	};
 
 std::unique_ptr<vkb::Application> create_tree_tp1();

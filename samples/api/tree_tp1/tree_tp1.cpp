@@ -88,6 +88,8 @@ const std::array<DatasetDefinition, 3> &datasets()
 }
 }        // namespace
 
+// Ajustes iniciais de câmera e título da amostra. Como herdamos do framework,
+// basta posicionar a câmera para olhar o plano XY onde a árvore será desenhada.
 TreeTp1::TreeTp1()
 {
 	title = "TP1 - Arterial Tree 2D";
@@ -116,6 +118,8 @@ TreeTp1::~TreeTp1()
 	}
 }
 
+// `prepare` é chamado pelo framework. Aqui configuramos todos os recursos Vulkan
+// necessários (buffers, pipelines e carregamento inicial dos dados VTK).
 bool TreeTp1::prepare(const vkb::ApplicationOptions &options)
 {
 	if (!ApiVulkanSample::prepare(options))
@@ -144,6 +148,8 @@ bool TreeTp1::prepare(const vkb::ApplicationOptions &options)
 	return true;
 }
 
+// UBO simples contendo a matriz MVP e informações de faixa de raio. Atualizamos
+	// esse buffer toda frame via `update_uniform_buffer`.
 void TreeTp1::create_uniform_buffers()
 {
 	uniform_buffers.scene = std::make_unique<vkb::core::BufferC>(get_device(),
@@ -165,6 +171,8 @@ void TreeTp1::setup_descriptor_pool()
 
 void TreeTp1::setup_descriptor_set_layout()
 {
+	// Layout com um único UBO (set 0, binding 0) compartilhado entre VS e FS.
+	// `vkb::initializers` já configura `VkDescriptorSetLayoutBinding` com tipo/tamanho corretos.
 	const std::array<VkDescriptorSetLayoutBinding, 1> set_layout_bindings = {
 	    vkb::initializers::descriptor_set_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0)};
 
@@ -173,6 +181,7 @@ void TreeTp1::setup_descriptor_set_layout()
 
 	VK_CHECK(vkCreateDescriptorSetLayout(get_device().get_handle(), &descriptor_layout, nullptr, &descriptor_set_layout));
 
+	// Pipeline layout simples, apenas com o set acima. Sem push constants nesta amostra.
 	VkPipelineLayoutCreateInfo pipeline_layout_info =
 	    vkb::initializers::pipeline_layout_create_info(&descriptor_set_layout, 1);
 
@@ -181,6 +190,8 @@ void TreeTp1::setup_descriptor_set_layout()
 
 void TreeTp1::setup_descriptor_set()
 {
+	// Aloca o descriptor set com base no layout criado acima e atualiza com o buffer do UBO.
+	// Essa estrutura é padrão em todas as amostras do framework.
 	VkDescriptorSetAllocateInfo alloc_info =
 	    vkb::initializers::descriptor_set_allocate_info(descriptor_pool, &descriptor_set_layout, 1);
 
@@ -237,11 +248,11 @@ void TreeTp1::prepare_pipeline()
 
 	const std::array<VkVertexInputAttributeDescription, 6> vertex_input_attributes = {
 	    vkb::initializers::vertex_input_attribute_description(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SegmentVertex, position)),
-	    vkb::initializers::vertex_input_attribute_description(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SegmentVertex, segment_a)),
-	    vkb::initializers::vertex_input_attribute_description(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SegmentVertex, segment_b)),
+	    vkb::initializers::vertex_input_attribute_description(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SegmentVertex, capsule_start)),
+	    vkb::initializers::vertex_input_attribute_description(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SegmentVertex, capsule_end)),
 	    vkb::initializers::vertex_input_attribute_description(0, 3, VK_FORMAT_R32_SFLOAT, offsetof(SegmentVertex, capsule_radius)),
-	    vkb::initializers::vertex_input_attribute_description(0, 4, VK_FORMAT_R32_SFLOAT, offsetof(SegmentVertex, radius_value)),
-	    vkb::initializers::vertex_input_attribute_description(0, 5, VK_FORMAT_R32_SFLOAT, offsetof(SegmentVertex, tip_factor))};
+	    vkb::initializers::vertex_input_attribute_description(0, 4, VK_FORMAT_R32_SFLOAT, offsetof(SegmentVertex, dataset_radius)),
+	    vkb::initializers::vertex_input_attribute_description(0, 5, VK_FORMAT_R32_SFLOAT, offsetof(SegmentVertex, branch_depth_factor))};
 
 	VkPipelineVertexInputStateCreateInfo vertex_input_state = vkb::initializers::pipeline_vertex_input_state_create_info();
 	vertex_input_state.vertexBindingDescriptionCount        = static_cast<uint32_t>(vertex_input_bindings.size());
@@ -267,6 +278,8 @@ void TreeTp1::prepare_pipeline()
 
 void TreeTp1::build_command_buffers()
 {
+	// Os command buffers deixam o fluxo de desenho direto: bind do pipeline, vertex buffer
+	// e descriptor set únicos, concluindo com apenas um vkCmdDraw por framebuffer.
 	VkCommandBufferBeginInfo command_buffer_begin_info = vkb::initializers::command_buffer_begin_info();
 
 	std::array<VkClearValue, 2> clear_values{};
@@ -320,6 +333,8 @@ void TreeTp1::build_command_buffers()
 
 void TreeTp1::handle_animation(float delta_time)
 {
+	// Controla o playback dos passos VTK fornecidos pelo professor (stepXXXX),
+	// percorrendo a lista com a taxa de quadros configurada e voltando ao início ao chegar no fim.
 	if (!parameters.animate || current_frames.size() <= 1)
 	{
 		return;
@@ -343,6 +358,8 @@ void TreeTp1::handle_animation(float delta_time)
 
 void TreeTp1::update_growth(float delta_time)
 {
+	// Atualiza a animação de crescimento por galho: usando "growth_speed" (segmentos/s) incrementa
+	// `growth_progress` e reconstrói a malha sempre que um novo segmento deve aparecer.
 	if (!parameters.growth_auto || !current_geometry.valid())
 	{
 		return;
@@ -372,6 +389,8 @@ void TreeTp1::update_growth(float delta_time)
 
 void TreeTp1::update_uniform_buffer()
 {
+	// Reescreve o único UBO com a matriz MVP atual e a faixa de raios do dataset,
+	// garantindo que os shaders recalculam as cores mesmo quando a UI altera parâmetros.
 	if (!uniform_buffers.scene)
 	{
 		return;
@@ -391,6 +410,11 @@ void TreeTp1::update_uniform_buffer()
 
 glm::mat4 TreeTp1::build_model_matrix() const
 {
+	// Monta a matriz modelo composta:
+	//   1. Aplica a translação definida pelo usuário
+	//   2. Realiza rotações X/Y/Z para criar a sensação de profundidade
+	//   3. Faz auto-scale para caber em [-1,1] e multiplica pela escala manual
+	//   4. Recentraliza a árvore removendo o centro do bounding box
 	glm::mat4 model(1.0f);
 
 	const glm::vec2 center = 0.5f * (current_geometry.min_bounds + current_geometry.max_bounds);
@@ -435,6 +459,8 @@ void TreeTp1::render(float delta_time)
 
 void TreeTp1::on_update_ui_overlay(vkb::Drawer &drawer)
 {
+	// O Drawer constrói a barra lateral com todos os controles exigidos.
+	// Chamamos tudo a cada frame, mas só executamos trabalho pesado quando algum widget muda.
 	if (!drawer.header("TP1 Controls"))
 	{
 		return;
@@ -451,6 +477,7 @@ void TreeTp1::on_update_ui_overlay(vkb::Drawer &drawer)
 	int selected_dataset = parameters.dataset_index;
 	if (drawer.combo_box("Dataset", &selected_dataset, dataset_labels))
 	{
+		// Ao trocar o dataset precisamos reinicializar cache e geometria para manter tudo sincronizado.
 		if (set_dataset(selected_dataset))
 		{
 			load_frame(0);
@@ -472,6 +499,7 @@ void TreeTp1::on_update_ui_overlay(vkb::Drawer &drawer)
 
 	if (drawer.checkbox("Animate", &parameters.animate))
 	{
+		// Zera o acumulador para evitar pulos de frame quando o usuário liga/desliga a animação.
 		playback.accumulator = 0.0f;
 	}
 
@@ -541,6 +569,7 @@ void TreeTp1::on_update_ui_overlay(vkb::Drawer &drawer)
 	    drawer.slider_float("Rotação Z", &parameters.rotation_z_deg, -180.0f, 180.0f) ||
 	    drawer.slider_float("Rotação Y", &parameters.rotation_y_deg, -89.0f, 89.0f))
 	{
+		// Sliders de transformação afetam apenas o UBO, então evitamos reconstruir a geometria.
 		update_uniform_buffer();
 	}
 
@@ -568,6 +597,7 @@ bool TreeTp1::resize(uint32_t new_width, uint32_t new_height)
 
 bool TreeTp1::set_dataset(int dataset_index)
 {
+	// Seleciona um grupo de arquivos (Nterm 64/128/256) e reinicia o estado de reprodução.
 	const auto &defs = datasets();
 	if (dataset_index < 0 || dataset_index >= static_cast<int>(defs.size()))
 	{
@@ -587,6 +617,7 @@ bool TreeTp1::set_dataset(int dataset_index)
 
 bool TreeTp1::load_frame(uint32_t frame_index)
 {
+	// Carrega ou parseia o frame solicitado, atualiza `current_geometry` e reconstrói a malha.
 	if (current_frames.empty())
 	{
 		return false;
@@ -622,6 +653,7 @@ bool TreeTp1::load_frame(uint32_t frame_index)
 
 bool TreeTp1::rebuild_current_mesh()
 {
+	// Converte os dados parseados em vértices para a GPU e refaz os command buffers.
 	std::vector<SegmentVertex> vertices;
 	if (!build_vertices_from_segments(current_geometry, vertices, parameters.growth_progress))
 	{
@@ -644,8 +676,12 @@ bool TreeTp1::rebuild_current_mesh()
 	return true;
 }
 
+// Converte os dados do parser em cápsulas desenháveis. Também respeita o número
+// de galhos visíveis (growth_progress) para que a animação adicione um segmento por vez.
 bool TreeTp1::build_vertices_from_segments(const FrameGeometry &geometry, std::vector<SegmentVertex> &out_vertices, float growth_progress) const
 {
+	// Emite dois triângulos por segmento de galho. O CPU calcula tangentes, raios e atributos
+	// de shading para que os shaders lidem apenas com projeção e avaliação do SDF.
 	if (!geometry.valid())
 	{
 		return false;
@@ -699,71 +735,71 @@ bool TreeTp1::build_vertices_from_segments(const FrameGeometry &geometry, std::v
 	{
 		const SegmentData &segment = geometry.segments[(*order_ptr)[ordered_index]];
 
-		const glm::vec2 axis2d = segment.b - segment.a;
-		const float     planar_length = glm::length(axis2d);
+		const glm::vec2 segment_vector = segment.end_point - segment.start_point;
+		const float     planar_length  = glm::length(segment_vector);
 		if (planar_length <= std::numeric_limits<float>::epsilon())
 		{
 			continue;
 		}
 
-		glm::vec2 planar_dir = axis2d / planar_length;
-		glm::vec3 tangent3   = glm::normalize(glm::vec3(planar_dir.x, planar_dir.y, 0.1f));
-		glm::vec3 bitangent3 = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), tangent3);
-		if (glm::dot(bitangent3, bitangent3) < 1e-5f)
+		const glm::vec2 normalized_direction = segment_vector / planar_length;
+		glm::vec3       tangent_vector       = glm::normalize(glm::vec3(normalized_direction.x, normalized_direction.y, 0.1f));
+		glm::vec3       bitangent_vector     = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), tangent_vector);
+		if (glm::dot(bitangent_vector, bitangent_vector) < 1e-5f)
 		{
-			bitangent3 = glm::vec3(0.0f, 1.0f, 0.0f);
+			bitangent_vector = glm::vec3(0.0f, 1.0f, 0.0f);
 		}
-		bitangent3 = glm::normalize(bitangent3);
+		bitangent_vector = glm::normalize(bitangent_vector);
 
-		glm::vec3 planar_extend(planar_dir.x, planar_dir.y, 0.0f);
-		if (glm::dot(planar_extend, planar_extend) < 1e-5f)
+		glm::vec3 planar_extension(normalized_direction.x, normalized_direction.y, 0.0f);
+		if (glm::dot(planar_extension, planar_extension) < 1e-5f)
 		{
-			planar_extend = glm::vec3(1.0f, 0.0f, 0.0f);
+			planar_extension = glm::vec3(1.0f, 0.0f, 0.0f);
 		}
-		planar_extend = glm::normalize(planar_extend);
+		planar_extension = glm::normalize(planar_extension);
 
-		const float dataset_factor = glm::clamp((segment.radius - min_radius_dataset) / radius_range, 0.0f, 1.0f);
+		const float dataset_factor = glm::clamp((segment.dataset_radius - min_radius_dataset) / radius_range, 0.0f, 1.0f);
 
 		float capsule_radius = fixed_radius;
-			if (parameters.use_dataset_radius)
-			{
-				const float branch_factor   = glm::clamp(segment.depth_factor, 0.0f, 1.0f);
-				float       combined_factor = glm::clamp(branch_factor * 0.65f + dataset_factor * 0.35f, 0.0f, 1.0f);
-				combined_factor             = glm::mix(combined_factor, combined_factor * combined_factor, 0.45f);
-				capsule_radius              = glm::mix(min_thickness, max_thickness, combined_factor);
-				float tip_taper             = glm::mix(0.55f, 1.0f, branch_factor);
+		if (parameters.use_dataset_radius)
+		{
+			const float branch_factor   = glm::clamp(segment.depth_factor, 0.0f, 1.0f);
+			float       combined_factor = glm::clamp(branch_factor * 0.65f + dataset_factor * 0.35f, 0.0f, 1.0f);
+			combined_factor             = glm::mix(combined_factor, combined_factor * combined_factor, 0.45f);
+			capsule_radius              = glm::mix(min_thickness, max_thickness, combined_factor);
+			const float tip_taper       = glm::mix(0.55f, 1.0f, branch_factor);
 			capsule_radius *= tip_taper;
-			}
-			capsule_radius = std::max(capsule_radius, 0.0001f);
+		}
+		capsule_radius = std::max(capsule_radius, 0.0001f);
 
-			const float depth_value = depth_bias + dataset_factor * depth_range;
-		const float depth_variation = 0.0f;
-		glm::vec3 a3(segment.a.x, segment.a.y, depth_value);
-		glm::vec3 b3(segment.b.x, segment.b.y, depth_value + depth_variation);
+		const float depth_value    = depth_bias + dataset_factor * depth_range;
+		const float depth_variance = 0.0f;
+		glm::vec3   start_position(segment.start_point.x, segment.start_point.y, depth_value);
+		glm::vec3   end_position(segment.end_point.x, segment.end_point.y, depth_value + depth_variance);
 
-		const glm::vec3 offset = bitangent3 * capsule_radius;
-		const glm::vec3 extend = planar_extend * capsule_radius;
+		const glm::vec3 radial_offset = bitangent_vector * capsule_radius;
+		const glm::vec3 axial_offset  = planar_extension * capsule_radius;
 
-		const glm::vec3 a_ext = a3 - extend;
-		const glm::vec3 b_ext = b3 + extend;
+		const glm::vec3 start_capsule = start_position - axial_offset;
+		const glm::vec3 end_capsule   = end_position + axial_offset;
 
-		auto emit_vertex = [&](const glm::vec3 &pos) {
+		auto emit_vertex = [&](const glm::vec3 &position) {
 			SegmentVertex vertex{};
-			vertex.position       = pos;
-			vertex.segment_a      = a3;
-			vertex.segment_b      = b3;
-			vertex.capsule_radius = capsule_radius;
-			vertex.radius_value   = segment.radius;
-			vertex.tip_factor     = segment.depth_factor;
+			vertex.position             = position;
+			vertex.capsule_start        = start_position;
+			vertex.capsule_end          = end_position;
+			vertex.capsule_radius       = capsule_radius;
+			vertex.dataset_radius       = segment.dataset_radius;
+			vertex.branch_depth_factor  = segment.depth_factor;
 			out_vertices.push_back(vertex);
 		};
 
-		emit_vertex(a_ext + offset);
-		emit_vertex(a_ext - offset);
-		emit_vertex(b_ext + offset);
-		emit_vertex(a_ext - offset);
-		emit_vertex(b_ext - offset);
-		emit_vertex(b_ext + offset);
+		emit_vertex(start_capsule + radial_offset);
+		emit_vertex(start_capsule - radial_offset);
+		emit_vertex(end_capsule + radial_offset);
+		emit_vertex(start_capsule - radial_offset);
+		emit_vertex(end_capsule - radial_offset);
+		emit_vertex(end_capsule + radial_offset);
 	}
 
 	return !out_vertices.empty();
@@ -771,6 +807,7 @@ bool TreeTp1::build_vertices_from_segments(const FrameGeometry &geometry, std::v
 
 bool TreeTp1::upload_geometry(const std::vector<SegmentVertex> &vertices)
 {
+	// Cria um vertex buffer mapeável (CPU→GPU) e copia todo o vetor de vértices para ele.
 	vertex_count = static_cast<uint32_t>(vertices.size());
 	if (vertex_count == 0)
 	{
@@ -791,6 +828,8 @@ bool TreeTp1::upload_geometry(const std::vector<SegmentVertex> &vertices)
 
 TreeTp1::FrameGeometry TreeTp1::parse_vtk_file(const std::string &relative_path) const
 {
+	// Parser completo de VTK: lê POINTS, LINES e CELL_DATA; converte cada linha em SegmentData
+	// e executa Dijkstra no grafo de conectividade para estimar profundidade (usada nas animações e taper).
 	FrameGeometry geometry{};
 
 	const std::string absolute_path = vkb::fs::path::get(vkb::fs::path::Assets, relative_path);
@@ -983,9 +1022,9 @@ TreeTp1::FrameGeometry TreeTp1::parse_vtk_file(const std::string &relative_path)
 		depth_factor       = glm::clamp(depth_factor, 0.0f, 1.0f);
 
 		SegmentData data{};
-		data.a            = a;
-		data.b            = b;
-		data.radius       = radius;
+		data.start_point  = a;
+		data.end_point    = b;
+		data.dataset_radius = radius;
 		data.depth_factor = depth_factor;
 		geometry.segments.push_back(data);
 
@@ -1014,7 +1053,7 @@ TreeTp1::FrameGeometry TreeTp1::parse_vtk_file(const std::string &relative_path)
 		                 const SegmentData &b_seg = geometry.segments[rhs];
 		                 if (a_seg.depth_factor == b_seg.depth_factor)
 		                 {
-			                 return a_seg.radius > b_seg.radius;
+			                 return a_seg.dataset_radius > b_seg.dataset_radius;
 		                 }
 		                 return a_seg.depth_factor > b_seg.depth_factor;
 	                 });
