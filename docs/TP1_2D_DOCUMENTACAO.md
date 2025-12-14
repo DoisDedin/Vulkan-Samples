@@ -40,8 +40,7 @@ Este documento registra todo o trabalho realizado sobre o fork do projeto **Khro
   1. Código C++ herda de `ApiVulkanSample`, que fornece a janela, swapchain e loop de render.
   2. Métodos obrigatórios: `prepare()`, `build_command_buffers()`, `render()`, `on_update_ui_overlay()`.
   3. Recursos Vulkan (buffers, UBOs, pipelines) ficam encapsulados em utilitários (`vkb::core::BufferC`, `load_shader`, etc.).
-  4. **Layouts e descriptors**: cada sample registra seus `VkDescriptorSetLayoutBinding` (por exemplo, `tree_tp1` usa um único UBO para VS/FS), cria o pipeline layout e aloca o descriptor set com esses layouts. Isso padroniza o uso de uniform buffers/recursos nos shaders.
-  5. Os shaders são listados no `CMakeLists.txt` do sample para que sejam compilados antes da execução.
+  4. Os shaders são listados no `CMakeLists.txt` do sample para que sejam compilados antes da execução.
 
 Esse padrão facilita criar novas amostras: basta copiar uma pasta existente, ajustar o CMake e escrever o código específico (neste projeto, todo o comportamento está em `tree_tp1.cpp/.h` e `shaders/tree_tp1/glsl`).
 
@@ -202,16 +201,3 @@ cmake --build build/mac --config Release --target vulkan_samples -j"$(sysctl -n 
   - A projeção ortográfica usada pelo Vulkan é obtida com `glm::ortho(left, right, bottom, top, -1, 1)` e gera a matriz `P`.
   - O UBO armazena `MVP = P * M`, que o vertex shader aplica em cada vértice.
 
-### 8.3 Relatório/anexos exigidos
-- Este documento cobre os tópicos textuais exigidos (formato dos dados, API, transformações).
-- Para cumprir o requisito de capturas de tela, rode `tree_tp1`, use os modos de visualização (raio fixo/variável, crescimento, recorte se implementado) e salve as imagens a serem inseridas no PDF final.
-
----
-
-## 9. Próximos passos (quando migrar para o TP2)
-
-- Reaproveitar o parser para os dados 3D (`TP2_3D`).
-- Trocar a projeção para perspectiva/ou ortográfica 3D nativa.
-- Ajustar o shading para volumes 3D reais (possível evolução do fragment shader atual).
-
-Com este material, o professor consegue acompanhar todo o desenvolvimento: desde a base usada, passando pelas decisões técnicas até o resultado final. A amostra `tree_tp1` está pronta para demonstração e serve como ponto de partida robusto para o TP2.
