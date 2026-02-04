@@ -25,6 +25,32 @@ scan_dirs(
 # List of all samples
 set(TOTAL_SAMPLE_ID_LIST)
 
+# Make whitelist available as a normal variable for this directory.
+if(DEFINED CACHE{VKB_SAMPLE_WHITELIST} AND NOT "$CACHE{VKB_SAMPLE_WHITELIST}" STREQUAL "")
+    set(VKB_SAMPLE_WHITELIST "$CACHE{VKB_SAMPLE_WHITELIST}")
+endif()
+
+# Fast path: if whitelist is set, only add those samples and stop.
+if(DEFINED VKB_SAMPLE_WHITELIST AND NOT "${VKB_SAMPLE_WHITELIST}" STREQUAL "")
+    foreach(_sample_id ${VKB_SAMPLE_WHITELIST})
+        set(_sample_dir "")
+        foreach(_category api extensions performance general tooling)
+            if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_category}/${_sample_id}/CMakeLists.txt")
+                set(_sample_dir "${CMAKE_CURRENT_SOURCE_DIR}/${_category}/${_sample_id}")
+                break()
+            endif()
+        endforeach()
+
+        if (_sample_dir)
+            add_subdirectory(${_sample_dir})
+            list(APPEND TOTAL_SAMPLE_ID_LIST ${_sample_id})
+        endif()
+    endforeach()
+
+    set(TOTAL_SAMPLE_ID_LIST ${TOTAL_SAMPLE_ID_LIST} PARENT_SCOPE)
+    return()
+endif()
+
 # For each directory, add all the samples that exist within
 function(add_sub_dirs DIRECTORY)
     scan_dirs(
@@ -33,6 +59,15 @@ function(add_sub_dirs DIRECTORY)
 
     foreach (CURR_DIR ${DIR_LIST})
         if (EXISTS "${DIRECTORY}/${CURR_DIR}/CMakeLists.txt")
+            if(DEFINED VKB_SAMPLE_WHITELIST AND NOT "${VKB_SAMPLE_WHITELIST}" STREQUAL "")
+                list(FIND VKB_SAMPLE_WHITELIST ${CURR_DIR} _whitelist_idx)
+                if(_whitelist_idx LESS 0)
+                    # Skip samples not in whitelist
+                    set(TOTAL_SAMPLE_ID_LIST ${TOTAL_SAMPLE_ID_LIST} PARENT_SCOPE)
+                    continue()
+                endif()
+            endif()
+
             add_subdirectory(${DIRECTORY}/${CURR_DIR})
             list(APPEND TOTAL_SAMPLE_ID_LIST ${CURR_DIR})
         else ()
@@ -52,6 +87,7 @@ set(ORDER_LIST
     "hello_triangle"
     "hello_triangle_1_3"
     "tree_tp1"
+    "cco_tree_3d"
     "dynamic_uniform_buffers"
     "texture_loading"
     "hdr"

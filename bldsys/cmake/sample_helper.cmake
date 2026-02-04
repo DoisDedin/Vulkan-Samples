@@ -21,6 +21,29 @@
 
 set(SCRIPT_DIR ${CMAKE_CURRENT_LIST_DIR})
 
+# Make whitelist available as a normal variable for this directory.
+if(DEFINED CACHE{VKB_SAMPLE_WHITELIST} AND NOT "$CACHE{VKB_SAMPLE_WHITELIST}" STREQUAL "")
+    set(VKB_SAMPLE_WHITELIST "$CACHE{VKB_SAMPLE_WHITELIST}")
+endif()
+
+function(vkb_sample_allowed TARGET_ID OUT_VAR)
+    if(DEFINED VKB_SAMPLE_WHITELIST AND NOT "${VKB_SAMPLE_WHITELIST}" STREQUAL "")
+        list(FIND VKB_SAMPLE_WHITELIST ${TARGET_ID} _idx)
+    elseif(DEFINED CACHE{VKB_SAMPLE_WHITELIST} AND NOT "$CACHE{VKB_SAMPLE_WHITELIST}" STREQUAL "")
+        set(_whitelist "$CACHE{VKB_SAMPLE_WHITELIST}")
+        list(FIND _whitelist ${TARGET_ID} _idx)
+    else()
+        set(${OUT_VAR} ON PARENT_SCOPE)
+        return()
+    endif()
+
+    if(_idx GREATER -1)
+        set(${OUT_VAR} ON PARENT_SCOPE)
+    else()
+        set(${OUT_VAR} OFF PARENT_SCOPE)
+    endif()
+endfunction()
+
 function(add_sample)
     set(options)
     set(oneValueArgs ID CATEGORY AUTHOR NAME DESCRIPTION DXC_ADDITIONAL_ARGUMENTS GLSLC_ADDITIONAL_ARGUMENTS)
@@ -123,7 +146,12 @@ function(add_project)
     cmake_parse_arguments(TARGET "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(${TARGET_TYPE} STREQUAL "Sample")
-        set("VKB_${TARGET_ID}" ON CACHE BOOL "Build sample ${TARGET_ID}")
+        vkb_sample_allowed(${TARGET_ID} _sample_allowed)
+        if(_sample_allowed)
+            set("VKB_${TARGET_ID}" ON CACHE BOOL "Build sample ${TARGET_ID}" FORCE)
+        else()
+            set("VKB_${TARGET_ID}" OFF CACHE BOOL "Build sample ${TARGET_ID}" FORCE)
+        endif()
     endif()
 
     if(NOT ${VKB_${TARGET_ID}})
